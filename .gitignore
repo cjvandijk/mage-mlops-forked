@@ -18,6 +18,7 @@ logs/
 mage_data/
 mlruns/
 secrets/
+taxi_data/
 terraform.tfstate
 terraform.tfstate.backup
 titanic_clean.csv
