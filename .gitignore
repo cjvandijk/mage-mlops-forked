@@ -1,6 +1,7 @@
 *.db
 .DS_Store
 .cache/
+.env
 .file_versions
 .gitkeep
 .log
