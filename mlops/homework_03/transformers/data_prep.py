@@ -16,18 +16,22 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
         df: The output from the upstream parent block
     
     Returns:
-        df: transformed dataframe
+        df: transformed dataframe with reduced columns
     """
 
-
+    # calculate target feature
     df['duration'] = df.tpep_dropoff_datetime - df.tpep_pickup_datetime
     df.duration = df.duration.dt.total_seconds() / 60
 
+    # Eliminate outliers
     df = df[(df.duration >= 1) & (df.duration <= 60)]
 
+    # prepare features for training task
     categorical = ['PULocationID', 'DOLocationID']
     df[categorical] = df[categorical].astype(str)
     numerical = ['trip_distance', 'duration']
+
+    # reduct memory load by removing unused columns
     df = df[categorical + numerical]
     
     return df

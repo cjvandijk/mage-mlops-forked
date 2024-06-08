@@ -1,8 +1,14 @@
-import mlflow
+from pathlib import Path
+import pickle
+import tempfile
 from typing import Tuple
+
+import mlflow
+from mlflow.tracking import MlflowClient
+from mlflow.entities import ViewType
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import LinearRegression
-from homework_03.utils.dump_file import dump_pickle
+
 
 if 'data_exporter' not in globals():
     from mage_ai.data_preparation.decorators import data_exporter
@@ -13,37 +19,47 @@ def export_data(
     data: Tuple[DictVectorizer, LinearRegression], *args, **kwargs
     ) -> None:
     """
-    Exports data to some source.
+    Logs the dictvectorizer to mlflow artifacts and the linear 
+    regression model to mlflow models. Registers the logged model 
+    in mlflow.
 
     Args:
-        data: The output from the upstream parent block
-        args: The output from any additional upstream blocks (if applicable)
+        data: The output from the upstream parent block containing a tuple
+        with a dictvectorizer and a linear regression model
 
-    Output (optional):
-        Optionally return any object and it'll be logged and
-        displayed when inspecting the block run.
+    Output:
+        No output is returned
     """
-    EXPERIMENT_NAME = training_model_thru_mage
+
+
+    EXPERIMENT_NAME = "training_model_thru_mage"
+
     mlflow.set_tracking_uri("http://mlflow:5000")
     mlflow.set_experiment(EXPERIMENT_NAME)
-    # experiment = mlflow.get_experiment("training_model_thru_mage")
 
     dv, lr = data
-    dump_file((dv, lr), "models/lin_reg.bin")
 
-    with mlflow.start_run():
-        mlflow.log_artifact(dv, artifact_path="dictvectorizers")
-        model_info = mlflow.sklearn.log_model(
-            sk_model=lr, artifact_path="modelsxx"
-        )
+    # save model and dictvectorizer to temp directory
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        path = Path(tmp_dir) / "lin_reg.bin"
+        with open(path, "wb") as f_out:
+            pickle.dump((dv, lr), f_out)
 
+        # log model and dv artifact
+        with mlflow.start_run():
+            mlflow.log_artifact(path)
+            model_info = mlflow.sklearn.log_model(
+                sk_model=lr, artifact_path="modelsxx"
+            )
+
+    # register model in mlflow
     client = MlflowClient()
     experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
     best_run = client.search_runs(
         experiment_ids=experiment.experiment_id,
         run_view_type=ViewType.ACTIVE_ONLY,
         max_results=1,
-        order_by=["metrics.rmse ASC"]
+        # order_by=["metrics.rmse ASC"]
     )[0]
     
     # Register best model

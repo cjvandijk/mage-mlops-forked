@@ -12,12 +12,12 @@ def ingest_files(**kwargs) -> pd.DataFrame:
     Loads March 2023 data from NYC yellow taxi trip data.
 
     Returns:
-        pd.DataFrame
+        pd.DataFrame populated with that data
     """
 
-    file_loc = "mlops/homework_03/taxi_data/yellow_tripdata_2023-03.parquet"
+    FILE_LOC = "mlops/homework_03/taxi_data/yellow_tripdata_2023-03.parquet"
 
-    return pd.read_parquet(file_loc)
+    return pd.read_parquet(FILE_LOC)
 
 
 @test
